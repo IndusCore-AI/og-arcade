@@ -269,7 +269,7 @@ function laneRows(R, width, theme) {
   if (!R.done && !R.playing) spr = TINY
   const H = LANE * 2
   const px = Array.from({ length: H }, () => new Array(width).fill(-1))
-  const x0 = Math.round(R.x - spr[0].length / 2)
+  const x0 = Math.max(0, Math.min(width - spr[0].length, Math.round(R.x - spr[0].length / 2)))
   const y0 = H - spr.length - lift
   spr.forEach((row, j) => {
     for (let i = 0; i < row.length; i++) {

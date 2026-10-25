@@ -150,28 +150,32 @@ const POINT = [
   '............',
 ]
 const PAL = { B: 0x3b5dc9, H: 0x5f86ec, D: 0x29366f, W: 0xfff1e8, K: 0x111d35, O: 0xffa300, F: 0xff6c24, P: 0xff77a8 }
-const DEFAULT = 0x01000000
 
-function rasterCells(rows) {
-  const h = rows.length + (rows.length % 2)
-  const w = rows[0].length
-  const nums = []
-  for (let y = 0; y < h; y += 2) {
-    for (let x = 0; x < w; x++) {
+function hex6(c) {
+  return '#' + (c | 0x1000000).toString(16).slice(1)
+}
+
+/** Sprite rows as half-block runs; transparent pixels keep the terminal's own background. */
+function spriteRows(rows) {
+  const out = []
+  for (let y = 0; y < rows.length; y += 2) {
+    const runs = []
+    for (let x = 0; x < rows[0].length; x++) {
       const a = PAL[(rows[y] || '')[x]]
       const b = PAL[(rows[y + 1] || '')[x]]
-      if (a === undefined && b === undefined) nums.push(32, DEFAULT, DEFAULT)
-      else if (a !== undefined && b === undefined) nums.push(0x2580, a, DEFAULT)
-      else if (a === undefined) nums.push(0x2584, b, DEFAULT)
-      else nums.push(0x2580, a, b)
+      let s = ' ', fg, bg
+      if (a !== undefined && b === undefined) { s = '▀'; fg = a }
+      else if (a === undefined && b !== undefined) { s = '▄'; fg = b }
+      else if (a !== undefined) { s = '▀'; fg = a; bg = b }
+      const last = runs[runs.length - 1]
+      if (last && last.fg === fg && last.bg === bg) last.s += s
+      else runs.push({ s, fg, bg })
     }
+    out.push(runs)
   }
-  const bytes = new Uint8Array(Uint32Array.from(nums).buffer)
-  let bin = ''
-  for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i])
-  return { cells: btoa(bin), columns: w, rows: h / 2 }
+  return out
 }
-const POINT_CELLS = rasterCells(POINT)
+const POINT_ROWS = spriteRows(POINT)
 
 // ---------- register ----------
 
@@ -333,7 +337,7 @@ export function register(on) {
   on('ui.render', { component: 'Pane' }, async ($, e, next) => {
     if (e.requestId !== PANE) return next(e)
     if (e.viewport) S.fullscreen = !!e.viewport.isFullscreen
-    const { Box, Text, Client, Raster, Button } = $.ui.resolve(e)
+    const { Box, Text, Client, Button } = $.ui.resolve(e)
     if (e.surface !== 'terminal') {
       return Text({ children: ["Pip's Arcade draws in the terminal. Run claude in a terminal to play."] })
     }
@@ -355,7 +359,12 @@ export function register(on) {
         flexDirection: 'row',
         columnGap: 2,
         children: [
-          Raster({ key: 'pip-point', columns: POINT_CELLS.columns, rows: POINT_CELLS.rows, cells: POINT_CELLS.cells }),
+          Box({
+            flexDirection: 'column',
+            children: POINT_ROWS.map(runs =>
+              Text({ children: runs.map(r => (r.fg === undefined && r.bg === undefined ? r.s : Text({ color: hex6(r.fg), ...(r.bg !== undefined ? { backgroundColor: hex6(r.bg) } : {}), children: [r.s] }))) }),
+            ),
+          }),
           Box({
             flexDirection: 'column',
             children: [
@@ -376,6 +385,7 @@ export function register(on) {
       code: { seq: S.code.seq, lines: S.code.lines.slice(-120) },
       input: S.input,
       cfg: { sound: S.cfg.sound, reduceMotion: S.cfg.reduceMotion },
+      classic: S.fullscreen === false,
     }
     const game = Client({ key: 'arcade', module: '../client/arcade.js', props, width: cols, height: rows })
     if (S.fullscreen !== false) return game
@@ -395,7 +405,7 @@ export function register(on) {
       flexDirection: 'column',
       children: [
         game,
-        Box({ flexDirection: 'row', columnGap: 2, children: [key('a', '◀'), key('d', '▶'), key('w', '▲'), key('s', '▼'), key('j', 'go'), key('x', 'alt'), key('p', 'pause'), key('q', 'menu'), key('1', ''), key('2', ''), key('3', ''), key('4', '')] }),
+        Box({ flexDirection: 'row', columnGap: 2, children: [key('a', '◀'), key('d', '▶'), key('w', '▲'), key('s', '▼'), key('j', 'go'), key('x', 'alt'), key('p', 'pause'), key('q', 'menu'), key('1', 'runner'), key('2', 'rocket'), key('3', 'claw'), key('4', 'read')] }),
       ],
     })
   })

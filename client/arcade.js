@@ -45,8 +45,8 @@ export default function Arcade(props, surface) {
     S.inputSeq = props.input.seq
   }
   if (props.boot && props.boot.seq !== S.bootSeq) {
-    if (S.bootSeq !== undefined) openFromProps(S, props)
     S.bootSeq = props.boot.seq
+    openFromProps(S, { ...props, resume: null })
   }
   S.props = props
   return view(S, props, surface)
@@ -66,7 +66,7 @@ function boot(props, surface) {
     claudeSeen: props.claude ? props.claude.state : 'idle',
     over: null,
     inputSeq: props.input ? props.input.seq : undefined,
-    bootSeq: props.boot ? props.boot.seq : undefined,
+    bootSeq: props.boot ? props.boot.seq : null,
     out: null,
     focused: false,
     props,
@@ -400,7 +400,10 @@ function drawHints(S, cv, props) {
   else if (S.scene === 'over') keys = [['space', 'again'], ['q', 'menu']]
   else keys = [...(GAMES[S.gameId] ? GAMES[S.gameId].meta.keys : []), ['p', 'pause'], ['q', 'menu']]
   let col = 1
-  if (!S.focused) {
+  if (props.classic) {
+    col = cv.text(col, row, 'the keys under the game drive it', 0x8f8fb3)
+    keys = []
+  } else if (!S.focused) {
     col = cv.text(col, row, 'click here to play', C.butter, undefined, true)
     col = cv.text(col, row, '  ', undefined)
   }
