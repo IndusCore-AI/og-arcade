@@ -1,0 +1,8 @@
+{
+  "name": "linewalker",
+  "version": "0.1.0",
+  "description": "Pip's Arcade: a little blue penguin with three small games for while Claude works (Code Runner, Little Rocket, Claw Rush) that pause the moment Claude needs you, and a reading guide that walks across Claude's answer lighting one word at a time. /pip to start.",
+  "author": { "name": "IndusCore" },
+  "license": "MIT",
+  "keywords": ["game", "arcade", "penguin", "reading", "mod", "wait"]
+}
