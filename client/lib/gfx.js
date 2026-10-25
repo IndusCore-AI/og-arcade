@@ -219,6 +219,22 @@ export function encode(cv) {
     else if (y >= H) y = H - 1
     return px[y * w + x]
   }
+  // Text with no background sits on whichever of its two pixels its
+  // neighbours share, so a star or a sparkle never shows as a box behind a letter
+  const luma = c => ((c >> 16) & 255) * 0.3 + ((c >> 8) & 255) * 0.59 + (c & 255) * 0.11
+  const under = (c, r, top, bot) => {
+    if (top === bot) return top
+    let st = 0, sb = 0
+    for (const dc of [-2, -1, 1, 2]) {
+      const a = at(c + dc, r * 2), b = at(c + dc, r * 2 + 1)
+      if (a === top) st++
+      if (b === top) st++
+      if (a === bot) sb++
+      if (b === bot) sb++
+    }
+    if (st !== sb) return st > sb ? top : bot
+    return luma(top) <= luma(bot) ? top : bot
+  }
   for (let r = 0; r < rows; r++) {
     const line = []
     let run = null
@@ -230,7 +246,7 @@ export function encode(cv) {
       if (t) {
         ch = t.ch
         fg = t.fg
-        bg = t.bg === undefined || t.bg === null ? top : t.bg
+        bg = t.bg === undefined || t.bg === null ? under(c, r, top, bot) : t.bg
         b = !!t.bold
         if (ch === ' ') fg = -1
       } else if (top === bot) {

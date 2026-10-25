@@ -22,12 +22,12 @@ export const meta = {
 const STAGE_TIME = 45
 
 // ---------- sprites ----------
-const SHIP = ['...W...', '..WCW..', '..WKW..', '.RWWWR.', 'RRWBWRR', 'R.WWW.R', '..O.O..']
-const SHIP_PAL = { W: C.white, C: C.cyan, K: C.blue, R: 0x4e6ad8, B: C.blueHi, O: C.amber }
+const SHIP = ['...W...', '..WPW..', '..WEW..', '.RWWWR.', 'RRWBWRR', 'R.WWW.R', '..O.O..']
+const SHIP_PAL = { W: C.white, P: C.blue, E: C.amber, R: 0x4e6ad8, B: C.blueHi, O: C.amber }
 const FLAME = [['..Y.Y..', '...O...'], ['..O.O..', '..Y.Y..'], ['.Y...Y.', '..O.O..']]
 const BUG = [
-  ['.R.R.', 'RRRRR', 'RWRWR', 'RRRRR', 'R...R'],
-  ['.R.R.', 'RRRRR', 'RWRWR', 'RRRRR', '.R.R.'],
+  ['K...K', '.KRK.', 'RWRWR', 'RKRKR', 'K.R.K'],
+  ['.K.K.', '.KRK.', 'RWRWR', 'RKRKR', '.K.K.'],
 ]
 const MOTH = [
   ['M.....M', 'MMRRRMM', '.MRWRM.', 'MMRRRMM', 'M.....M'],
@@ -50,7 +50,7 @@ const BOSS = [
   'R..R.R.R.R..R',
 ]
 const FISH = ['.YY..Y', 'YYYYYY', '.YY..Y']
-const EP = { R: C.red, W: C.white, K: C.night, M: C.crimson, P: 0xa13aa8, A: C.pink }
+const EP = { R: C.red, W: C.white, K: 0x3a1030, M: C.crimson, P: 0xa13aa8, A: C.pink }
 const EP_HURT = { ...EP, P: C.red }
 
 const KIND = {

@@ -304,7 +304,12 @@ export function register(on) {
       await saveCfg($)
       $.ui.invalidate('ui.render')
     }
-    if (d.read) await startReading($)
+    if (d.read) {
+      // reading starts from the arcade: close it, so the answer has your attention
+      const fromArcade = e.element === 'arcade'
+      const ok = await startReading($)
+      if (ok && fromArcade && S.reading && S.reading.mode === 'transcript') await $.ui.close({ id: PANE })
+    }
     if (d.readDone) {
       const wasPane = S.reading && S.reading.mode === 'pane'
       S.reading = null

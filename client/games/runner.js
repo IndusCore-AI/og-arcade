@@ -59,6 +59,7 @@ export function create(w, h, seed, carry = {}) {
     warm: true,
     pip: { x: 6, y: 0, vy: 0, ground: true, coyote: 0, buf: 0, jumps: 0, slide: 0, inv: 0, lives: 3, land: 0, stretch: 0, hurt: 0, dead: 0 },
     cam: 0,
+    typeQ: 0,
     speed: 24,
     dist: 0,
     fishN: 0,
@@ -112,7 +113,8 @@ function addLine(world, raw, file, n) {
   const gap = !last ? 0 : /[{(\[:]$/.test(last.text) ? 3 : 5
   const x0 = Math.max(world.endX + gap, last ? last.x1 + gap : 0)
   const w = Math.max(6, body.length + 2)
-  const p = { x0, x1: x0 + w, row: rowOf(world, indent), indent, text: body, toks: tokenize(body), file, n }
+  const p = { x0, x1: x0 + w, row: rowOf(world, indent), indent, text: body, toks: tokenize(body), file, n, born: world.warm || n === null ? -9 : world.t + world.typeQ }
+  if (n !== null && !world.warm) world.typeQ += body.length / 90
   if (last && last.file !== file && file) world.signs.push({ x: x0, file })
   world.plats.push(p)
   world.endX = p.x1
@@ -152,8 +154,14 @@ export function resize(world, w, h) {
 
 // ---------- update ----------
 
+function typed(world, p) {
+  if (p.born <= world.t - 5) return p.text.length
+  return Math.max(0, Math.min(p.text.length, Math.floor((world.t - p.born) * 90)))
+}
+
 function platAt(world, x, fromY, toY) {
   for (const p of world.plats) {
+    if (p.born > world.t) continue
     if (x + 2 < p.x0 || x - 2 > p.x1) continue
     const top = platTop(world, p)
     if (fromY <= top + 0.5 && toY >= top) return p
@@ -164,6 +172,7 @@ function platAt(world, x, fromY, toY) {
 export function update(world, dt, input, fx, ctx = {}) {
   const ev = []
   world.t += dt
+  world.typeQ = Math.max(0, world.typeQ - dt)
   world.phaseT += dt
   const p = world.pip
   const jumpPress = input.includes('action') || input.includes('up')
@@ -189,7 +198,8 @@ export function update(world, dt, input, fx, ctx = {}) {
   }
 
   // run, unless we caught up with what Claude has written
-  const edge = world.endX - 1
+  let edge = world.endX - 1
+  for (const pl of world.plats) if (pl.born > world.t) { edge = Math.min(edge, pl.x0 - 4); break }
   world.speed = Math.min(40, 24 + world.dist / 120)
   const v = world.speed * (p.slide > 0 ? 1.6 : 1)
   const atEnd = p.x >= edge - 3 && p.ground
@@ -386,9 +396,13 @@ export function draw(world, cv, fx, t) {
   for (const p of world.plats) {
     const x0 = p.x0 - cam
     if (x0 > W || p.x1 - cam < 0) continue
+    if (p.born > world.t) continue
+    const shown = typed(world, p)
+    const typing = shown < p.text.length
     const top = platTop(world, p)
     // the slab's lit edge, brighter under Pip
-    for (let x = p.x0; x < p.x1; x++) {
+    const xEnd = typing ? p.x0 + 1 + shown : p.x1
+    for (let x = p.x0; x < xEnd; x++) {
       const sx = x - cam
       if (sx < 0 || sx >= W) continue
       const near = Math.abs(x - px) <= 3 && Math.abs(world.pip.y - top) < 1
@@ -398,12 +412,18 @@ export function draw(world, cv, fx, t) {
     const row = p.row
     let c = x0 + 1
     cv.text(x0, row, ' ', undefined, 0x1a2350)
+    let k = 0
     for (const tk of p.toks) {
       for (const ch of tk.s) {
+        if (k++ >= shown) break
         const lit = Math.abs(c + cam - px) <= 3 && Math.abs(world.pip.y - top) < 1
         if (c >= 0 && c < W) cv.text(c, row, ch, lit ? C.night : TOK[tk.k] || 0xe8ecff, lit ? C.butter : 0x1a2350, lit)
         c++
       }
+    }
+    if (typing) {
+      if (c >= 0 && c < W && Math.floor(t * 4) % 2 === 0) cv.text(c, row, '▌', C.butter, 0x1a2350)
+      continue
     }
     for (; c < p.x1 - cam; c++) if (c >= 0 && c < W) cv.text(c, row, ' ', undefined, 0x1a2350)
     // line number tab at the left edge
@@ -412,7 +432,7 @@ export function draw(world, cv, fx, t) {
 
   // fish
   for (const f of world.fish) {
-    if (f.got) continue
+    if (f.got || (f.born || 0) > world.t) continue
     const x = f.x - cam
     if (x < -4 || x > W + 4) continue
     const bob = Math.round(Math.sin(t * 4 + f.x) * 0.8)

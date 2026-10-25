@@ -315,21 +315,27 @@ function drawGame(S, fcv, props) {
   if (S.scene === 'over' && S.over) overCard(S, fcv)
 }
 
+/** A centred title in the 5x7 font, or the 3x5 one when the pane is too narrow. */
+function bigTitle(cv, title, y, color) {
+  const t = title.toUpperCase()
+  const w5 = font5Width(t)
+  if (w5 + 4 <= cv.w) return font5(cv, t, Math.round((cv.w - w5) / 2), y, color, 0x07091a)
+  const w3 = font3Width(t, 1)
+  font3(cv, t, Math.round((cv.w - w3) / 2), y + 1, color, 1, 0x07091a)
+}
+
 function card(cv, title, sub, color) {
   cv.wash(0x0d1330, 0.6)
-  const tw = font5Width(title)
   const y = Math.max(2, Math.floor(cv.h / 2) - 7)
-  font5(cv, title, Math.round((cv.w - tw) / 2), y, color, 0x07091a)
-  cv.textCenter(Math.floor((y + 12) / 2), ' ' + sub + ' ', 0xb9b3d6)
+  bigTitle(cv, title, y, color)
+  cv.textCenter(Math.floor((y + 12) / 2), ' ' + clip(sub, cv.cols - 4) + ' ', 0xb9b3d6)
 }
 
 function overCard(S, cv) {
   const o = S.over
   cv.wash(0x0d1330, Math.min(0.62, S.sceneT * 2))
   const y = Math.max(2, Math.floor(cv.h / 2) - 10)
-  const title = o.title.toUpperCase()
-  const tw = font5Width(title)
-  font5(cv, title, Math.round((cv.w - tw) / 2), y, o.clear ? C.lime : C.butter, 0x07091a)
+  bigTitle(cv, o.title, y, o.clear ? C.lime : C.butter)
   const r = Math.floor((y + 11) / 2)
   const sc = 'score ' + o.score.toLocaleString('en-US') + '   best ' + o.best.toLocaleString('en-US')
   cv.textCenter(r, ' ' + sc + ' ', C.white, undefined, true)
@@ -429,9 +435,15 @@ function drawMenu(S, cv, props) {
   const tagRow = 6
   const cardTop = 16
   const cardStep = cardH + 8 // px between card rows, room for the label row
-  const cardsEnd = cardTop + rowsOfCards * cardStep - 4
-  const tipRow = Math.floor(cardsEnd / 2) + 1
-  const ground = Math.max((tipRow + 2) * 2, H - 10)
+  const anyBest = ORDER.some(id => props.best && props.best[id])
+  const lastLabel = Math.floor((cardTop + (rowsOfCards - 1) * cardStep + cardH + 3) / 2)
+  let tipRow = lastLabel + (anyBest ? 3 : 2)
+  let ground = Math.max((tipRow + 1) * 2 + 5, H - 10)
+  if (ground > H - 8) {
+    // no room for the tip: let the snow have it
+    tipRow = -1
+    ground = Math.max((lastLabel + (anyBest ? 2 : 1)) * 2 + 4, H - 10)
+  }
 
   // aurora night: a gradient sky, a ribbon of light, stars that twinkle
   cv.vgrad(0, 0, W, ground, 0x07091a, 0x1d2b53, 6)
@@ -484,10 +496,15 @@ function drawMenu(S, cv, props) {
     const lx = Math.round(x + cw / 2 - label.length / 2)
     const end = cv.text(Math.max(0, lx), row, String(i + 1), sel ? C.white : 0x6f6f93, undefined, true)
     cv.text(end + 1, row, CARDS[id].title, sel ? accent : 0xa0a6c8, undefined, sel)
+    const best = props.best && props.best[id]
+    if (best) {
+      const b = '★ ' + best.toLocaleString('en-US')
+      cv.text(Math.round(x + cw / 2 - b.length / 2), row + 1, b, sel ? C.butter : 0x6f6f93)
+    }
   })
 
   const sub = props.claude && props.claude.state === 'working' ? 'Claude is on it. Pip pauses the game when Claude needs you.' : 'Pip pauses the game whenever Claude needs you.'
-  if ((tipRow + 1) * 2 <= ground) cv.textCenter(tipRow, clip(sub, W - 4), 0x8f8fb3)
+  if (tipRow > 0) cv.textCenter(tipRow, clip(sub, W - 4), 0x8f8fb3)
 
   // Pip waddles across the snow
   const span = W - 14
