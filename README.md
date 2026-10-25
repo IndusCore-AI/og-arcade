@@ -77,6 +77,6 @@ python3 -m http.server 8765   # then open dev/harness.html?m=../client/arcade.js
 
 ## Credits
 
-Game rules come from public descriptions of Galaga, Gold Miner and the Chrome dino runner, which are not protected; all art, names and sounds are our own. Game-feel numbers follow the `game-feel` and `agentic-gamedev-skills` agent skills, Celeste's released player code and the "Juice it or lose it" demo.
+Game rules come from public descriptions of Galaga and Gold Miner and from endless runners in general, and game rules are not protected; all art, names and sounds are our own. Game-feel numbers follow the `game-feel` and `agentic-gamedev-skills` agent skills, Celeste's released player code and the "Juice it or lose it" demo.
 
 MIT licence.
