@@ -1,12 +1,12 @@
 {
-  "name": "pip-arcade",
-  "description": "Pip, a little blue penguin who keeps you company while Claude works",
+  "name": "og-arcade",
+  "description": "OG's Arcade: four classic games for while Claude works, with a weekly board on GitHub",
   "owner": { "name": "IndusCore" },
   "plugins": [
     {
-      "name": "linewalker",
+      "name": "og-arcade",
       "source": "./",
-      "description": "Three small games for while Claude works that pause the moment Claude needs you, and a reading guide that walks across Claude's answer one word at a time. /pip to start.",
+      "description": "Snake, Brick Break, Little Rocket and Claw Rush while Claude works. They pause the moment Claude needs you; the best runs each week go on the board. /og to play.",
       "category": "fun"
     }
   ]

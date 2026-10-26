@@ -7,13 +7,16 @@
 // level: faster swing and reel, and a flatter weight curve so the worst grab
 // costs about 5 s, not 15.
 //
-// Positions are kept as fractions of the dig area, so the game survives the
-// pane being resized mid-level.
+// A run goes level after level through the trading post until a level misses
+// its goal. The score is everything banked over the run, so spending at the
+// trading post never costs a place on the board. Rules use det.js maths so a
+// posted run replays to the same score on the board's server.
 
 import { C, PIP } from '../lib/palette.js'
 import { MINER, CHEER, FRONT } from '../lib/pip.js'
 import { font3, font3Width, font5, font5Width, mix, shade } from '../lib/gfx.js'
 import * as J from '../lib/juice.js'
+import * as D from '../lib/det.js'
 
 export const meta = {
   id: 'claw',
@@ -21,11 +24,14 @@ export const meta = {
   zh: '抓金子',
   blurb: 'Drop the claw, reel in gold. Heavy is slow. TNT goes boom.',
   keys: [['↓', 'drop'], ['↑', 'dynamite']],
+  accent: C.gold,
 }
 
 const LEVEL_TIME = 40
-const GOALS = [450, 800, 1350, 2050, 2950]
-export const goalFor = lv => (lv <= GOALS.length ? GOALS[lv - 1] : GOALS[GOALS.length - 1] + (lv - GOALS.length) * 1000)
+// Each level's goal rises by more than the last (+700, +1000, +1300, ...), and
+// a level holds about the same gold, so every run ends somewhere: a casual
+// run around level 5, a sharp one past level 12.
+export const goalFor = lv => 450 + 400 * (lv - 1) + 150 * (lv - 1) * lv
 
 const SWING = (70 * Math.PI) / 180
 const PERIOD = 3.1 // seconds for a full swing
@@ -65,6 +71,7 @@ export function create(w, h, seed, carry = {}) {
     seed: seed | 0,
     level: carry.level || 1,
     money: carry.money || 0,
+    earned: carry.earned || 0, // banked over the whole run: the score
     dynamite: carry.dynamite ?? 1,
     strong: false,
     time: LEVEL_TIME,
@@ -84,7 +91,7 @@ export function create(w, h, seed, carry = {}) {
 function geom(world) {
   const ground = Math.max(12, Math.min(16, Math.round(world.h * 0.26)))
   const dig = world.h - ground
-  return { ground, dig, px: Math.floor(world.w / 2), py: ground - 1, max: Math.hypot(world.w / 2, dig) + 4 }
+  return { ground, dig, px: Math.floor(world.w / 2), py: ground - 1, max: D.hypot(world.w / 2, dig) + 4 }
 }
 
 /** Lays out a fresh level by depth band; never blocks the straight drop completely. */
@@ -104,7 +111,7 @@ function fill(world) {
         const v = J.rand(world, v0, v1)
         const ok = items.every(o => {
           const du = (o.u - u) * world.w, dv = (o.v - v) * (world.h * 0.74)
-          return Math.hypot(du, dv) > o.r + K.r + 2.5
+          return D.hypot(du, dv) > o.r + K.r + 2.5
         })
         if (ok) {
           items.push({ k, u, v, r: K.r, id: items.length + 1, wob: 0 })
@@ -125,7 +132,7 @@ function itemPos(world, it) {
 function tip(world) {
   const g = geom(world)
   const L = world.claw.len * g.dig
-  return { x: g.px + Math.sin(world.claw.a) * L, y: g.py + Math.cos(world.claw.a) * L, g }
+  return { x: g.px + D.sin(world.claw.a) * L, y: g.py + D.cos(world.claw.a) * L, g }
 }
 
 // ---------- update ----------
@@ -145,9 +152,12 @@ export function update(world, dt, input, fx) {
     swing(world, dt)
     return []
   }
-  if (world.phase === 'clear' || world.phase === 'fail') {
+  if (world.phase === 'clear') {
+    // a moment for the goal, then the trading post
+    if (world.phaseT > 1.4) openShop(world)
     return []
   }
+  if (world.phase === 'fail') return []
   if (world.phase === 'shop') {
     return updateShop(world, input)
   }
@@ -168,7 +178,7 @@ export function update(world, dt, input, fx) {
     // grab?
     for (const it of world.items) {
       const p = itemPos(world, it)
-      if (Math.hypot(p.x - x, p.y - y) <= it.r + 1.2) {
+      if (D.hypot(p.x - x, p.y - y) <= it.r + 1.2) {
         grab(world, it, fx, events)
         break
       }
@@ -223,7 +233,7 @@ export function update(world, dt, input, fx) {
 function swing(world, dt) {
   const cl = world.claw
   cl.ph += ((2 * Math.PI) / PERIOD) * dt
-  cl.a = Math.sin(cl.ph) * SWING
+  cl.a = D.sin(cl.ph) * SWING
 }
 function swingIdle(world, dt) {
   swing(world, dt * 0.6)
@@ -251,7 +261,7 @@ function grab(world, it, fx, events) {
   const p = itemPos(world, it)
   // medium tier: short freeze, a kick, a few glints
   J.hitstop(fx, it.k === 'big' || it.k === 'boulder' ? 2 : 1)
-  J.kick(fx, Math.sign(Math.sin(cl.a)) * 0.6, 0.8)
+  J.kick(fx, Math.sign(D.sin(cl.a)) * 0.6, 0.8)
   if (it.k === 'diamond' || it.k === 'big') J.burst(fx, p.x, p.y, 8, [0xffffff, C.butter, C.cyan], { speed: 28, life: 0.3, gravity: 0 })
   else if (it.k === 'rock' || it.k === 'boulder') J.burst(fx, p.x, p.y, 5, [C.slate, C.steel], { speed: 22, life: 0.3, gravity: 80 })
   events.push(it.k === 'rock' || it.k === 'boulder' ? 'thud' : 'grab')
@@ -276,6 +286,7 @@ function bank(world, fx, events) {
   } else {
     world.money += h.v
     world.total += h.v
+    world.earned += h.v
     const rich = h.v >= 250
     J.pop(fx, g.px + 12, g.ground - 4, '+' + h.v, rich ? C.yellow : h.v < 40 ? C.slate : C.gold, { life: 0.9, big: rich })
     if (rich) J.burst(fx, g.px, g.ground - 2, 12, [C.yellow, C.butter, 0xffffff], { speed: 45, life: 0.45, up: 20 })
@@ -297,7 +308,7 @@ function explode(world, it, fx, events) {
   for (const o of world.items) {
     if (o.gone) continue
     const q = itemPos(world, o)
-    if (Math.hypot(q.x - p.x, q.y - p.y) <= R + o.r) {
+    if (D.hypot(q.x - p.x, q.y - p.y) <= R + o.r) {
       if (o.k === 'tnt') { if (o.fuse === undefined) o.fuse = 0.1 }
       else o.gone = true
     }
@@ -349,14 +360,18 @@ function updateShop(world, input) {
 
 /** The next level, keeping money, dynamite and what was bought. */
 export function nextLevel(world) {
-  const carry = { level: world.level + 1, money: world.money, dynamite: world.dynamite }
+  const carry = { level: world.level + 1, money: world.money, earned: world.earned, dynamite: world.dynamite }
   const nw = create(world.w, world.h, world.seed + 7919, carry)
   nw.strong = !!world.strongNext
   return nw
 }
 
 export function score(world) {
-  return world.money
+  return world.earned
+}
+
+export function overTitle(world) {
+  return world.level > 1 ? 'Reached level ' + world.level : 'Short of the goal'
 }
 
 // ---------- draw ----------
@@ -535,6 +550,11 @@ function drawHud(world, cv, g, t) {
     font5(cv, s, Math.round((world.w - w) / 2), g.ground + 5, C.white, 0x2c1719)
     const sub = 'reach ' + money(goal) + ' in ' + LEVEL_TIME + ' seconds'
     cv.textCenter(Math.floor((g.ground + 16) / 2), ' ' + sub + ' ', C.butter, 0x2c1719)
+  }
+  if (world.phase === 'clear') {
+    const s = 'GOAL!'
+    font5(cv, s, Math.round((world.w - font5Width(s)) / 2), g.ground + 5, C.lime, 0x2c1719)
+    cv.textCenter(Math.floor((g.ground + 16) / 2), ' ' + money(world.total) + ' this level · trading post next ', C.butter, 0x2c1719)
   }
 }
 

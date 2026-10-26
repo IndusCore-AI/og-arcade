@@ -6,10 +6,16 @@
 //
 // Danger has one colour, red, and only enemies and their bullets wear it.
 // Pip's snowballs are ice blue. Fish are power-ups.
+//
+// A run goes stage after stage: beat the Heisenbug and the next stage starts
+// with the score, hearts and power carried over. It ends when the rocket is
+// down or a stage's clock runs out. Rules use det.js maths so a posted run
+// replays to the same score on the board's server.
 
 import { C, PIP } from '../lib/palette.js'
 import { font5, font5Width, mix } from '../lib/gfx.js'
 import * as J from '../lib/juice.js'
+import * as D from '../lib/det.js'
 
 export const meta = {
   id: 'rocket',
@@ -17,6 +23,7 @@ export const meta = {
   zh: '小火箭',
   blurb: 'Dodge, auto-fire, beat the Heisenbug.',
   keys: [['← →', 'move'], ['space', 'snow bomb']],
+  accent: C.coral,
 }
 
 const STAGE_TIME = 45
@@ -71,7 +78,7 @@ export function create(w, h, seed, carry = {}) {
     phase: 'ready',
     phaseT: 0,
     time: STAGE_TIME,
-    p: { x: w / 2, vx: 0, glide: 0, lastMove: -9, dir: 0, hp: 3, inv: 0, power: 1, fireT: 0, bombs: 1, kick: 0, hitT: 0 },
+    p: { x: w / 2, vx: 0, glide: 0, lastMove: -9, dir: 0, hp: carry.hp || 3, inv: 0, power: carry.power || 1, fireT: 0, bombs: carry.bombs ?? 1, kick: 0, hitT: 0 },
     shots: [],
     bullets: [],
     foes: [],
@@ -80,23 +87,14 @@ export function create(w, h, seed, carry = {}) {
     waves: 0,
     next: 0.6,
     diveT: 2.5,
-    score: 0,
-    grazes: 0,
-    kills: 0,
+    score: carry.score || 0,
+    grazes: carry.grazes || 0,
+    kills: carry.kills || 0,
     nextId: 1,
   }
 }
 
 const shipY = world => world.h - 9
-
-export function resize(world, w, h) {
-  const kx = w / world.w, ky = h / world.h
-  world.p.x *= kx
-  for (const list of [world.shots, world.bullets, world.foes, world.fish]) for (const o of list) { o.x *= kx; o.y *= ky; if (o.sx !== undefined) { o.sx *= kx; o.sy *= ky } }
-  if (world.boss) { world.boss.x *= kx; world.boss.y *= ky }
-  world.w = w
-  world.h = h
-}
 
 function slots(world) {
   // formation slots: row 0 beetles, row 1 moths, row 2 bugs
@@ -174,7 +172,15 @@ export function update(world, dt, input, fx) {
     if (world.phaseT > 1.2) { world.phase = 'play'; world.phaseT = 0 }
     return ev
   }
-  if (world.phase === 'over' || world.phase === 'clear') return ev
+  if (world.phase === 'clear') {
+    // a moment to enjoy it, then the next stage
+    if (world.phaseT > 2.4 && !world.advanced) {
+      world.advanced = true
+      ev.push('next')
+    }
+    return ev
+  }
+  if (world.phase === 'over') return ev
 
   world.time = Math.max(0, world.time - dt)
   p.inv = Math.max(0, p.inv - dt)
@@ -225,14 +231,14 @@ export function update(world, dt, input, fx) {
   // foes
   const diveEvery = Math.max(0.6, 1.4 - 0.15 * (world.stage - 1) - (world.waves >= 3 ? 0.4 : 0))
   world.diveT -= dt
-  const sway = Math.sin(world.t * 1.3) * 3
+  const sway = D.sin(world.t * 1.3) * 3
   for (const f of world.foes) {
     f.hurt = Math.max(0, f.hurt - dt)
     if (f.state === 'enter') {
       f.st += dt
       const k = J.clamp(f.st / 1.3, 0, 1)
       if (f.st < 0) continue
-      const e = J.ease.inOutSine(k)
+      const e = D.inOutSine(k)
       // a swoop: out to the side, then into the slot
       const midX = world.w / 2 + (f.ox < 0 ? -1 : 1) * world.w * 0.15
       const midY = world.h * 0.62
@@ -242,11 +248,11 @@ export function update(world, dt, input, fx) {
       if (k >= 1) f.state = 'form'
     } else if (f.state === 'form') {
       f.x = f.sx + sway
-      f.y = f.sy + Math.sin(world.t * 2 + f.slot) * 0.6
+      f.y = f.sy + D.sin(world.t * 2 + f.slot) * 0.6
     } else if (f.state === 'dive') {
       f.st += dt
       f.y += (0.42 + 0.05 * world.stage) * world.h * dt
-      f.x = f.dx + Math.sin(f.st * 3.2) * world.w * 0.12 + (f.tx - f.dx) * Math.min(1, f.st / 1.4)
+      f.x = f.dx + D.sin(f.st * 3.2) * world.w * 0.12 + (f.tx - f.dx) * Math.min(1, f.st / 1.4)
       if (!f.shot && f.y > world.h * 0.38) {
         f.shot = true
         aim(world, f.x, f.y + 2, p.x, shipY(world), 0.45 + 0.04 * world.stage)
@@ -290,15 +296,15 @@ export function update(world, dt, input, fx) {
       } else if (pat === 1 && b.patT > 2.0) {
         b.patT = 0
         for (let i = 0; i < 10; i++) {
-          const a = (i / 10) * Math.PI * 2 + b.t
-          world.bullets.push({ x: b.x, y: b.y + 4, vx: Math.cos(a) * 0.22 * world.h, vy: Math.abs(Math.sin(a)) * 0.22 * world.h + 4, g: false })
+          const a = (i / 10) * D.PI * 2 + b.t
+          world.bullets.push({ x: b.x, y: b.y + 4, vx: D.cos(a) * 0.22 * world.h, vy: Math.abs(D.sin(a)) * 0.22 * world.h + 4, g: false })
         }
         b.pat++
       } else if (pat === 2) {
         if (b.patT > 0.12) {
           b.patT = 0
           b.burst = (b.burst || 0) + 1
-          world.bullets.push({ x: b.x + Math.sin(b.t * 6) * 4, y: b.y + 6, vx: Math.sin(b.t * 3) * 0.15 * world.h, vy: 0.42 * world.h, g: false })
+          world.bullets.push({ x: b.x + D.sin(b.t * 6) * 4, y: b.y + 6, vx: D.sin(b.t * 3) * 0.15 * world.h, vy: 0.42 * world.h, g: false })
           if (b.burst > 12) { b.burst = 0; b.pat++ }
         }
       }
@@ -310,7 +316,7 @@ export function update(world, dt, input, fx) {
   for (const e of world.bullets) {
     e.x += e.vx * dt
     e.y += e.vy * dt
-    const d = Math.hypot(e.x - p.x, e.y - py)
+    const d = D.hypot(e.x - p.x, e.y - py)
     if (d < 1.2 && p.inv <= 0) { hit(world, fx, ev); e.dead = true }
     else if (d < 3 && !e.g && p.inv <= 0) {
       e.g = true
@@ -352,7 +358,7 @@ export function update(world, dt, input, fx) {
   // fish power-ups drift down
   for (const fi of world.fish) {
     fi.y += 0.25 * world.h * dt
-    fi.x += Math.sin(world.t * 4 + fi.y) * 0.2
+    fi.x += D.sin(world.t * 4 + fi.y) * 0.2
     if (Math.abs(fi.x - p.x) < 4 && Math.abs(fi.y - (shipY(world) + 2)) < 3) {
       fi.dead = true
       if (p.power < 3) p.power++
@@ -378,8 +384,8 @@ export function update(world, dt, input, fx) {
 }
 
 function aim(world, x, y, tx, ty, speed) {
-  const a = Math.atan2(ty - y, tx - x)
-  world.bullets.push({ x, y, vx: Math.cos(a) * speed * world.h, vy: Math.sin(a) * speed * world.h, g: false })
+  const a = D.atan2(ty - y, tx - x)
+  world.bullets.push({ x, y, vx: D.cos(a) * speed * world.h, vy: D.sin(a) * speed * world.h, g: false })
 }
 
 function damage(world, f, n, fx, ev) {
@@ -434,7 +440,7 @@ function hit(world, fx, ev) {
   J.shake(fx, 0.45)
   J.kick(fx, 0, 1.2)
   J.burst(fx, p.x, shipY(world) + 2, 14, [C.white, C.amber, C.red], { speed: 45, life: 0.4 })
-  world.bullets = world.bullets.filter(e => Math.hypot(e.x - p.x, e.y - shipY(world)) > 10)
+  world.bullets = world.bullets.filter(e => D.hypot(e.x - p.x, e.y - shipY(world)) > 10)
   ev.push('hurt')
 }
 
@@ -442,14 +448,23 @@ export function score(world) {
   return world.score
 }
 
-export function overTitle(world, clear) {
-  if (world.phase === 'clear' || clear) return 'Bug squashed!'
+export function overTitle(world) {
   if (world.p.hp <= 0) return 'Rocket down'
   return world.escaped ? 'It got away' : "Time's up"
 }
 
+/** The next stage: score, power and bombs carry over, plus a bomb and a heart for the win. */
 export function nextLevel(world) {
-  return create(world.w, world.h, world.seed + 31, { level: world.stage + 1 })
+  const p = world.p
+  return create(world.w, world.h, world.seed + 31, {
+    level: world.stage + 1,
+    score: world.score,
+    grazes: world.grazes,
+    kills: world.kills,
+    hp: Math.min(3, p.hp + 1),
+    power: p.power,
+    bombs: p.bombs + 1,
+  })
 }
 
 // ---------- draw ----------
@@ -540,5 +555,11 @@ export function draw(world, cv, fx, t) {
   if (b && b.y < 9) {
     const s = 'HEISENBUG'
     if (Math.floor(t * 4) % 2) font5(cv, s, Math.round((W - font5Width(s)) / 2), Math.round(H * 0.4), C.red, 0x2a0a20)
+  }
+  if (world.phase === 'clear' && world.phaseT > 0.5) {
+    const s = 'STAGE CLEAR'
+    const y = Math.round(H * 0.32)
+    font5(cv, s, Math.round((W - font5Width(s)) / 2), y, C.lime, 0x29366f)
+    cv.textCenter(Math.floor((y + 10) / 2), ' stage ' + (world.stage + 1) + ' next · +1 bomb · +1 ♥ ', C.butter, 0x111d35)
   }
 }

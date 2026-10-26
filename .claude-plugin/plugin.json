@@ -1,8 +1,10 @@
 {
-  "name": "linewalker",
-  "version": "0.1.0",
-  "description": "Pip's Arcade: a little blue penguin with three small games for while Claude works (Code Runner, Little Rocket, Claw Rush) that pause the moment Claude needs you, and a reading guide that walks across Claude's answer lighting one word at a time. /pip to start.",
+  "name": "og-arcade",
+  "version": "0.2.0",
+  "description": "OG's Arcade: Snake, Brick Break, Little Rocket and Claw Rush in your Claude Code terminal while Claude works, hosted by Pip the penguin. Games pause the moment Claude needs you. Everyone plays the same levels each week, and the best runs go on the weekly board on GitHub. /og to play.",
   "author": { "name": "IndusCore" },
+  "homepage": "https://github.com/IndusCore-AI/og-arcade",
+  "repository": "https://github.com/IndusCore-AI/og-arcade",
   "license": "MIT",
-  "keywords": ["game", "arcade", "penguin", "reading", "mod", "wait"]
+  "keywords": ["game", "arcade", "snake", "breakout", "leaderboard", "penguin", "mod", "wait"]
 }

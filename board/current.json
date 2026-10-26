@@ -1,0 +1,14 @@
+{
+  "week": "2026-W44",
+  "ends": "2026-11-02T00:00:00.000Z",
+  "updated": "2026-10-26T04:32:34.334Z",
+  "rules": 1,
+  "games": {
+    "snake": [],
+    "brick": [],
+    "rocket": [],
+    "claw": []
+  },
+  "og": [],
+  "champion": null
+}

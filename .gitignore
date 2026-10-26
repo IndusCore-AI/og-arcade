@@ -1,4 +1,4 @@
 .claude-plugin/types/
 tsconfig.json
+.board-results.json
 node_modules/
-.DS_Store

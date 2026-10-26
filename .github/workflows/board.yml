@@ -1,0 +1,58 @@
+# Checks runs posted from OG's Arcade and puts them on the weekly board.
+#
+# A run arrives as an issue whose body holds the keys pressed. The issue body is
+# untrusted: it is only ever read by scripts/board/board.mjs (JSON.parse, then a
+# replay through the games' own code), never put into a shell command.
+
+name: board
+
+on:
+  issues:
+    types: [opened]
+  schedule:
+    # sweep up anything a busy moment missed
+    - cron: '23,53 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+concurrency:
+  group: board-${{ github.event.issue.number || github.run_id }}
+
+jobs:
+  check:
+    if: github.event_name != 'issues' || contains(github.event.issue.body, '<!-- og-arcade run -->')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPO: ${{ github.repository }}
+      RESULTS: ${{ runner.temp }}/results.json
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Replay the posted runs
+        run: node scripts/board/board.mjs verify
+
+      - name: Put them on the board
+        run: |
+          git config user.name "og-arcade board"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          for i in 1 2 3 4 5 6; do
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            node scripts/board/board.mjs apply
+            git add board README.md
+            if git diff --cached --quiet; then break; fi
+            git commit -qm "board: $(node scripts/board/board.mjs summary)"
+            if git push -q origin HEAD:main; then break; fi
+            sleep $((RANDOM % 6 + 2))
+          done
+
+      - name: Tell the players
+        run: node scripts/board/board.mjs respond
