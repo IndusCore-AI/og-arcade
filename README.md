@@ -5,9 +5,11 @@ Four classic games in your Claude Code terminal, for while Claude works: **Snake
 <!-- board:start -->
 ### This week: week 44, ends Monday 00:00 UTC
 
-Nobody has posted a run yet. Be the first: type `/og` in Claude Code, finish a game, press **b**.
+| # | Player | Points | Snake | Brick Break | Little Rocket | Claw Rush |
+|--:|:--|--:|--:|--:|--:|--:|
+| 1 | <img src="https://github.com/playmoresports.png?size=40" width="20" height="20" alt=""> [@playmoresports](https://github.com/playmoresports) | **25** | · | 270 🥇 | · | · |
 
-<sub>Updated 2026-10-26 04:32 UTC by the board's GitHub Action. Points per game: 25, 18, 15, 12, 10, 8, 6, 4, 2, 1 for the top ten.</sub>
+<sub>Updated 2026-10-26 04:41 UTC by the board's GitHub Action. Points per game: 25, 18, 15, 12, 10, 8, 6, 4, 2, 1 for the top ten.</sub>
 <!-- board:end -->
 
 <img src="docs/menu.png" alt="OG's Arcade docked beside the Claude Code transcript, Pip walking across the snow under the four game cards" width="100%">
