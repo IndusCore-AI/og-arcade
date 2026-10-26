@@ -91,8 +91,10 @@ if (cmd === 'verify') {
 } else if (cmd === 'apply') {
   const state = load()
   const results = existsSync(RESULTS) ? JSON.parse(readFileSync(RESULTS, 'utf8')) : []
-  for (const r of results) {
-    if (state.processed.includes(r.number)) continue
+  const fresh = results.filter(r => !state.processed.includes(r.number))
+  // nothing new: leave the files alone, so a quiet sweep makes no commit
+  if (!fresh.length) process.exit(0)
+  for (const r of fresh) {
     state.processed.push(r.number)
     if (!r.ok) continue
     const w = (state.weeks[r.week] = state.weeks[r.week] || { runs: {} })
