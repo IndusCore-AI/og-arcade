@@ -699,9 +699,15 @@ function drawBoard(S, cv, props) {
     cv.textCenter(cv.rows - 1, 'github.com/IndusCore-AI/og-arcade', DIM)
     return
   }
-  // overall: points from each game's ranking
-  let r = 7
-  const og = (b.og || []).slice(0, Math.max(3, Math.min(5, cv.rows - 14)))
+  // overall: points from each game's ranking. Taller panes show more of
+  // both lists and sit the block in the middle.
+  const spare = cv.rows - 18
+  const ogN = Math.max(3, Math.min(10, 3 + Math.floor(spare / 2)))
+  const gameN = Math.max(3, Math.min(5, 3 + Math.floor((spare - (ogN - 3)) / 1)))
+  const og = (b.og || []).slice(0, ogN)
+  const used = Math.max(1, og.length) + 2 + 1 + gameN + 2
+  let r = 7 + Math.max(0, Math.min(6, Math.floor((cv.rows - 8 - used) / 3)))
+  if (!og.length) cv.textCenter(r++, 'no points yet', 0x6f6f93)
   og.forEach((e, i) => {
     const me = props.login && e.login === props.login
     const medal = i === 0 ? C.gold : i === 1 ? C.mist : i === 2 ? C.rose : DIM
@@ -715,14 +721,14 @@ function drawBoard(S, cv, props) {
     r++
   })
   r++
-  // each game's top three
+  // each game's top players
   const colW = Math.floor((W - 2) / ORDER.length)
   ORDER.forEach((id, i) => {
     const G = GAMES[id]
     const x = 1 + i * colW
     cv.text(x, r, clip(G.meta.title, colW - 1), G.meta.accent || C.gold, undefined, true)
     const list = (b.games && b.games[id]) || []
-    for (let k = 0; k < 3; k++) {
+    for (let k = 0; k < gameN; k++) {
       const e = list[k]
       if (!e) { if (k === 0) cv.text(x, r + 1, 'no runs yet', 0x6f6f93); break }
       const sc = fmt(e.score)
@@ -732,6 +738,7 @@ function drawBoard(S, cv, props) {
       cv.text(x + colW - 1 - sc.length, r + 1 + k, sc, k === 0 ? C.butter : DIM)
     }
   })
+  r += gameN - 3
   r += 5
   if (b.champion && b.champion.login && r < cv.rows - 1) cv.textCenter(r, "last week's OG: @" + b.champion.login + ' · ' + b.champion.points + ' points', C.gold)
   cv.textCenter(cv.rows - 1, 'github.com/IndusCore-AI/og-arcade', DIM)

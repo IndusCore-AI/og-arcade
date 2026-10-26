@@ -1,19 +1,6 @@
 {
   "rules": 1,
-  "weeks": {
-    "2026-W44": {
-      "runs": {
-        "brick": {
-          "playmoresports": {
-            "score": 270,
-            "ticks": 448,
-            "at": "2026-10-26T04:40:59.000Z",
-            "issue": 1
-          }
-        }
-      }
-    }
-  },
+  "weeks": {},
   "champions": [],
   "processed": [
     1

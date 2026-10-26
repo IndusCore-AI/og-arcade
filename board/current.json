@@ -1,25 +1,14 @@
 {
   "week": "2026-W44",
   "ends": "2026-11-02T00:00:00.000Z",
-  "updated": "2026-10-26T04:41:08.118Z",
+  "updated": "2026-10-26T04:42:09.504Z",
   "rules": 1,
   "games": {
     "snake": [],
-    "brick": [
-      {
-        "login": "playmoresports",
-        "score": 270
-      }
-    ],
+    "brick": [],
     "rocket": [],
     "claw": []
   },
-  "og": [
-    {
-      "login": "playmoresports",
-      "points": 25,
-      "wins": 1
-    }
-  ],
+  "og": [],
   "champion": null
 }
