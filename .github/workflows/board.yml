@@ -29,7 +29,6 @@ jobs:
     env:
       GH_TOKEN: ${{ github.token }}
       REPO: ${{ github.repository }}
-      RESULTS: ${{ runner.temp }}/results.json
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
