@@ -3,11 +3,11 @@
 Four classic games in your Claude Code terminal, for while Claude works: **Snake**, **Brick Break**, **Little Rocket** and **Claw Rush**, hosted by Pip the penguin. A game freezes the moment Claude needs you. Everyone plays the same levels all week, and the best players end up right here.
 
 <!-- board:start -->
-### This week: week 46, ends Monday 00:00 UTC
+### This week: week 47, ends Monday 00:00 UTC
 
 Nobody has posted a run yet. Be the first: type `/og` in Claude Code, finish a game, press **b**.
 
-<sub>Updated 2026-11-09 05:59 UTC by the board's GitHub Action. Points per game: 25, 18, 15, 12, 10, 8, 6, 4, 2, 1 for the top ten.</sub>
+<sub>Updated 2026-11-16 06:08 UTC by the board's GitHub Action. Points per game: 25, 18, 15, 12, 10, 8, 6, 4, 2, 1 for the top ten.</sub>
 <!-- board:end -->
 
 <img src="docs/menu.png" alt="OG's Arcade docked beside the Claude Code transcript, Pip walking across the snow under the four game cards" width="100%">
