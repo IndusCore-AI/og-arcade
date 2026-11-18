@@ -7,9 +7,9 @@ Four classic games in your Claude Code terminal, for while Claude works: **Snake
 
 | # | Player | Points | Snake | Brick Break | Little Rocket | Claw Rush |
 |--:|:--|--:|--:|--:|--:|--:|
-| 1 | <img src="https://github.com/playmoresports.png?size=40" width="20" height="20" alt=""> [@playmoresports](https://github.com/playmoresports) | **25** | 10 🥇 | · | · | · |
+| 1 | <img src="https://github.com/playmoresports.png?size=40" width="20" height="20" alt=""> [@playmoresports](https://github.com/playmoresports) | **25** | 50 🥇 | · | · | · |
 
-<sub>Updated 2026-11-18 23:56 UTC by the board's GitHub Action. Points per game: 25, 18, 15, 12, 10, 8, 6, 4, 2, 1 for the top ten.</sub>
+<sub>Updated 2026-11-18 23:57 UTC by the board's GitHub Action. Points per game: 25, 18, 15, 12, 10, 8, 6, 4, 2, 1 for the top ten.</sub>
 <!-- board:end -->
 
 <img src="docs/menu.png" alt="OG's Arcade docked beside the Claude Code transcript, Pip walking across the snow under the four game cards" width="100%">

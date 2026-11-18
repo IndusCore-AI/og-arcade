@@ -1,13 +1,13 @@
 {
   "week": "2026-W47",
   "ends": "2026-11-23T00:00:00.000Z",
-  "updated": "2026-11-18T23:56:56.128Z",
+  "updated": "2026-11-18T23:57:43.180Z",
   "rules": 1,
   "games": {
     "snake": [
       {
         "login": "playmoresports",
-        "score": 10
+        "score": 50
       }
     ],
     "brick": [],
