@@ -1,8 +1,22 @@
 {
   "rules": 1,
-  "weeks": {},
+  "weeks": {
+    "2026-W47": {
+      "runs": {
+        "snake": {
+          "playmoresports": {
+            "score": 10,
+            "ticks": 186,
+            "at": "2026-11-18T23:56:45.000Z",
+            "issue": 2
+          }
+        }
+      }
+    }
+  },
   "champions": [],
   "processed": [
-    1
+    1,
+    2
   ]
 }
